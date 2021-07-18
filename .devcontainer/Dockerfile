@@ -7,4 +7,4 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive &&\
     python3-dev &&\
     ln -s /usr/bin/python3.6 /usr/bin/python
 
-ENV CPATH=/usr/include/python3.6
+ENV CPATH=/usr/include/python3.6m
