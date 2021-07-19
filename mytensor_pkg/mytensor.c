@@ -5,6 +5,7 @@
 #include "mytensor.h"
 
 
+// memory management
 static void Vector_dealloc(PyVectorObject *self) {
     Py_XDECREF(self->data);
     Py_TYPE(self)->tp_free((PyObject *) self);
@@ -17,14 +18,12 @@ static PyObject *Vector_new(PyTypeObject *type, PyObject *args, PyObject *kwds) 
 
     // parse python object
     if (!PyArg_ParseTuple(args, "O", &data)) {
-        // todo: proper error handling here and below
-        printf("Failed to parse Python object.");
         return NULL;
     }
 
     // todo: accept general sequences
     if (!PyList_Check(data)) {
-        printf("Constructor expected list argument.");
+        PyErr_SetString(PyExc_TypeError, "Expected a string.");
         return NULL;
     }
 
@@ -33,7 +32,7 @@ static PyObject *Vector_new(PyTypeObject *type, PyObject *args, PyObject *kwds) 
         int size = PyList_Size((PyObject *) data);
         self->data = (double *) malloc(size * sizeof(double));
         if (self->data == NULL) {
-            printf("Failed to allocate vector data.");
+            PyErr_NoMemory();
             return NULL;
         }
         for (int i = 0;  i < size; ++i) {
@@ -42,23 +41,21 @@ static PyObject *Vector_new(PyTypeObject *type, PyObject *args, PyObject *kwds) 
                 self->data[i] = PyFloat_AsDouble(item);
             else if (PyLong_Check(item))
                 self->data[i] = PyLong_AsDouble(item);
-            else
-                printf("Constructor expected list elements to be ints or floats.");
+            else {
+                PyErr_SetString(PyExc_ValueError, "Expected list elements to be ints or floats.");
+                return NULL;
+            }
             ++self->size;
-        }
-        if (self->size != size) {
-            printf("Something went wrong.");
-            return NULL;
         }
     }
     return (PyObject *) self;
 }
 
 
+// other methods
 static PyObject *Vector_getsize(PyVectorObject *self, void *closure) {
     return PyLong_FromLong(self->size);
 }
-
 
 static PyObject *Vector_tolist(PyVectorObject *self) {
     PyObject *list = PyList_New(self->size);
@@ -76,6 +73,7 @@ static PyMethodDef Vector_methods[] = {
 };
 
 
+// sequence methods
 static Py_ssize_t Vector_len(PyVectorObject *self) {
     return self->size;
 }
@@ -86,6 +84,7 @@ static PySequenceMethods Vector_sequence_methods = {
 };
 
 
+// number methods
 static PyObject *Vector_add(PyVectorObject *self, PyVectorObject *other) {
     int size = self->size;
     if (size != other->size) {
@@ -110,6 +109,7 @@ static PyNumberMethods Vector_number_methods = {
 };
 
 
+// Python type definition
 PyTypeObject VectorType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "mytensor.Vector",
@@ -125,6 +125,7 @@ PyTypeObject VectorType = {
 };
 
 
+// Python module definition and initialization
 static PyModuleDef mytensormodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "mytensor",
