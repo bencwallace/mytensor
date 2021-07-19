@@ -14,35 +14,34 @@ static void Vector_dealloc(PyVectorObject *self) {
 
 static PyObject *Vector_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
     PyVectorObject *self;
-    PyListObject *data = NULL;
+    PyObject *data = NULL;
 
     // parse python object
     if (!PyArg_ParseTuple(args, "O", &data)) {
         return NULL;
     }
 
-    // todo: accept general sequences
-    if (!PyList_Check(data)) {
-        PyErr_SetString(PyExc_TypeError, "Expected a string.");
+    if (!PySequence_Check(data)) {
+        PyErr_SetString(PyExc_TypeError, "Expected a sequence.");
         return NULL;
     }
 
     self = (PyVectorObject *) type->tp_alloc(type, 0);
     if (self != NULL) {
-        int size = PyList_Size((PyObject *) data);
+        int size = PySequence_Size((PyObject *) data);
         self->data = (double *) malloc(size * sizeof(double));
         if (self->data == NULL) {
             PyErr_NoMemory();
             return NULL;
         }
         for (int i = 0;  i < size; ++i) {
-            PyObject *item = PyList_GetItem((PyObject *) data, i);
+            PyObject *item = PySequence_GetItem(data, i);
             if (PyFloat_Check(item))
                 self->data[i] = PyFloat_AsDouble(item);
             else if (PyLong_Check(item))
                 self->data[i] = PyLong_AsDouble(item);
             else {
-                PyErr_SetString(PyExc_ValueError, "Expected list elements to be ints or floats.");
+                PyErr_SetString(PyExc_ValueError, "Expected sequence elements to be ints or floats.");
                 return NULL;
             }
             ++self->size;
@@ -110,7 +109,7 @@ static PyNumberMethods Vector_number_methods = {
 
 
 // Python type definition
-PyTypeObject VectorType = {
+static PyTypeObject VectorType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "mytensor.Vector",
     .tp_doc = "My vector type",
