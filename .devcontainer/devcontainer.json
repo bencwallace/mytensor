@@ -8,7 +8,8 @@
 	// Set *default* container specific settings.json values on container create.
 	"settings": {
 		"python.pythonPath": "/usr/bin/python",
-		"editor.formatOnSave": false	// see https://code.visualstudio.com/docs/cpp/cpp-ide#_code-formatting
+		"editor.formatOnSave": false,	// see https://code.visualstudio.com/docs/cpp/cpp-ide#_code-formatting
+		"C_Cpp.default.includePath": ["/usr/include/python3.6m"]
 	},
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [

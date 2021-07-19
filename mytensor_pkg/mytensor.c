@@ -22,6 +22,7 @@ static PyObject *Vector_new(PyTypeObject *type, PyObject *args, PyObject *kwds) 
         return NULL;
     }
 
+    // todo: accept general sequences
     if (!PyList_Check(data)) {
         printf("Constructor expected list argument.");
         return NULL;
@@ -75,7 +76,41 @@ static PyMethodDef Vector_methods[] = {
 };
 
 
-static PyTypeObject VectorType = {
+static Py_ssize_t Vector_len(PyVectorObject *self) {
+    return self->size;
+}
+
+
+static PySequenceMethods Vector_sequence_methods = {
+    .sq_length = (lenfunc) Vector_len,
+};
+
+
+static PyObject *Vector_add(PyVectorObject *self, PyVectorObject *other) {
+    int size = self->size;
+    if (size != other->size) {
+        printf("Size mismatch.");
+        return NULL;
+    }
+
+    PyObject *data_list = PyList_New(size);
+    for (int i = 0; i < size; ++i) {
+        double sum = self->data[i] + other->data[i];
+        PyList_SetItem(data_list, i, PyFloat_FromDouble(sum));
+    }
+
+    PyObject *self_type = PyObject_Type((PyObject *) self);
+    PyObject *args = Py_BuildValue("(O)", data_list);
+    return PyObject_CallObject(self_type, args);
+};
+
+
+static PyNumberMethods Vector_number_methods = {
+    .nb_add = (binaryfunc) Vector_add,
+};
+
+
+PyTypeObject VectorType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "mytensor.Vector",
     .tp_doc = "My vector type",
@@ -85,7 +120,10 @@ static PyTypeObject VectorType = {
     .tp_new = Vector_new,
     .tp_dealloc = (destructor) Vector_dealloc,
     .tp_methods = Vector_methods,
+    .tp_as_sequence = &Vector_sequence_methods,
+    .tp_as_number = &Vector_number_methods,
 };
+
 
 static PyModuleDef mytensormodule = {
     PyModuleDef_HEAD_INIT,
