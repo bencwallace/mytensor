@@ -2,7 +2,7 @@
 #include <Python.h>
 #include <structmember.h>
 
-#include "mytensor.h"
+#include "myvector.h"
 
 
 // memory management
