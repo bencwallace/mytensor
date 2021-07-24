@@ -7,7 +7,7 @@
 
 // memory management
 static void Vector_dealloc(PyVectorObject *self) {
-    Py_XDECREF(self->data);
+    free(self->data);
     Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
@@ -41,9 +41,11 @@ static PyObject *Vector_new(PyTypeObject *type, PyObject *args, PyObject *kwds) 
             else if (PyLong_Check(item))
                 self->data[i] = PyLong_AsDouble(item);
             else {
+                Py_DECREF(item);
                 PyErr_SetString(PyExc_ValueError, "Expected sequence elements to be ints or floats.");
                 return NULL;
             }
+            Py_DECREF(item);
             ++self->size;
         }
     }
@@ -99,6 +101,7 @@ static PyObject *Vector_add(PyVectorObject *self, PyVectorObject *other) {
 
     PyObject *self_type = PyObject_Type((PyObject *) self);
     PyObject *args = Py_BuildValue("(O)", data_list);
+    // todo: decrement data_list refcount?
     return PyObject_CallObject(self_type, args);
 };
 

@@ -14,9 +14,11 @@ int extract_shape(int ndims, PyObject *shape_seq, int *shape) {
         PyObject *item = PySequence_GetItem(shape_seq, i);
         if (PyLong_Check(item)) {
             shape[i] = PyLong_AsLong(item);
+            Py_DECREF(item);
             size *= shape[i];
         }
         else {
+            Py_DECREF(item);
             PyErr_SetString(PyExc_ValueError, "Expected `shape` sequence to consist of integers.");
             return -1;
         }
@@ -43,6 +45,7 @@ int *generate_strides(int n, int *shape) {
     }
     for (int i = 0; i < n; i++)
         strides[i] = reversed_strides[n - i - 1];
+    free(reversed_strides);
 
     return strides;
 }
@@ -90,9 +93,9 @@ static PyObject *Tensor_new(PyTypeObject *type, PyObject *args, PyObject *kwds) 
 
 
 static void Tensor_dealloc(PyTensorObject *self) {
-    Py_XDECREF(self->strides);
-    Py_XDECREF(self->shape);
-    Py_XDECREF(self->data);
+    free(self->strides);
+    free(self->shape);
+    free(self->data);
     Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
@@ -109,6 +112,7 @@ static PyObject *Tensor_subscript(PyTensorObject *self, PyObject *idx_seq) {
         char *format = "Expected multi-index to have length %d";
         char *message = (char *) malloc((strlen(format) - 2 + ndims_str_len));
         sprintf(message, format, self->ndims);
+        free(message);
         PyErr_SetString(PyExc_ValueError, message);
         return NULL;
     }
@@ -116,9 +120,12 @@ static PyObject *Tensor_subscript(PyTensorObject *self, PyObject *idx_seq) {
     int *idx = (int *) malloc(n * sizeof(int));
     for (int i = 0; i < n; i++) {
         PyObject *item = PySequence_GetItem(idx_seq, i);
-        if (PyLong_Check(item))
+        if (PyLong_Check(item)) {
             idx[i] = PyLong_AsLong(item);
+            Py_DECREF(item);
+        }
         else {
+            Py_DECREF(item);
             PyErr_SetString(PyExc_ValueError, "Expected `shape` sequence to consist of integers.");
             return NULL;
         }
@@ -127,13 +134,16 @@ static PyObject *Tensor_subscript(PyTensorObject *self, PyObject *idx_seq) {
     int pos = 0;
     for (int i = 0; i < self->ndims; i++)
         pos += idx[i] * self->strides[i];
+    free(idx);
 
     int value = self->data[pos];
+    // todo: is reference counting needed here?
     return PyFloat_FromDouble(value);   // todo: return different view, not new object
 }
 
 
 static PyObject *Tensor_get_strides(PyTensorObject *self, PyObject *args) {
+    // todo: is reference counting needed?
     PyObject *strides_list = PyList_New(self->ndims);
     for (int i = 0; i < self->ndims; i++)
         PyList_SetItem(strides_list, i, PyLong_FromLong(self->strides[i]));
