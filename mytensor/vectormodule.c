@@ -125,10 +125,10 @@ static PyTypeObject VectorType = {
 
 
 // Python module definition and initialization
-static PyModuleDef mytensormodule = {
+static PyModuleDef lib_vector_module = {
     PyModuleDef_HEAD_INIT,
     .m_name = "lib_vector",
-    .m_doc = "My tensor module",
+    .m_doc = "My vector module",
     .m_size = -1,
 };
 
@@ -138,7 +138,7 @@ PyMODINIT_FUNC PyInit_lib_vector(void) {
     if (PyType_Ready(&VectorType) < 0)
         return NULL;
     
-    m = PyModule_Create(&mytensormodule);
+    m = PyModule_Create(&lib_vector_module);
     if (m == NULL)
         return NULL;
     
