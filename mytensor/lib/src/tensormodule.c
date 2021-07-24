@@ -140,6 +140,7 @@ static void Tensor_dealloc(PyTensorObject *self) {
 }
 
 
+// todo: simplify
 static PyObject *Tensor_subscript(PyTensorObject *self, PyObject *idx_seq) {
     if (!PySequence_Check(idx_seq)) {
         PyErr_SetString(PyExc_TypeError, "Expected multi-index to be a sequence.");
@@ -177,8 +178,15 @@ static PyObject *Tensor_subscript(PyTensorObject *self, PyObject *idx_seq) {
     free(idx);
 
     int value = self->data[pos];
-    // todo: is reference counting needed here?
-    return PyFloat_FromDouble(value);   // todo: return different view, not new object
+    PyObject *shape_list = PyList_New(1);
+    PyList_SetItem(shape_list, 0, PyLong_FromLong(1));
+
+    PyObject *data_list = PyList_New(1);
+    PyList_SetItem(data_list, 0, PyLong_FromLong(value));
+
+    PyObject *args = Py_BuildValue("OO", shape_list, data_list);
+    // todo: defined setitem and check if this is an actual view
+    return PyObject_CallObject(PyObject_Type((PyObject *) self), args);
 }
 
 
@@ -188,6 +196,13 @@ static PyObject *Tensor_get_strides(PyTensorObject *self, PyObject *args) {
     for (int i = 0; i < self->ndims; i++)
         PyList_SetItem(strides_list, i, PyLong_FromLong(self->strides[i]));
     return (PyObject *) strides_list;
+}
+
+
+static PyObject *Tensor_repr(PyTensorObject *self) {
+    if (self->size > 1)
+        return PyBaseObject_Type.tp_repr((PyObject *) self);
+    return PyFloat_Type.tp_repr(PyFloat_FromDouble(self->data[0]));
 }
 
 
@@ -225,6 +240,7 @@ static PyTypeObject TensorType = {
     .tp_members = Tensor_members,
     .tp_methods = Tensor_methods,
     .tp_as_mapping = &Tensor_mapping_methods,
+    .tp_repr = (reprfunc) Tensor_repr,
 };
 
 
