@@ -48,7 +48,31 @@ int *extract_ints(int n, PyObject *py_int_seq) {
 }
 
 
+// todo: combine with extract_ints
+double *extract_doubles(int n, PyObject *py_double_seq) {
+    double *double_seq = (double *) malloc(n * sizeof(double));
+    if (double_seq == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    for (int i = 0; i < n; i++) {
+        PyObject *item = PySequence_GetItem(py_double_seq, i);
+        if (PyFloat_Check(item))
+            double_seq[i] = PyFloat_AsDouble(item);
+        else if (PyLong_Check(item))
+            double_seq[i] = PyLong_AsDouble(item);
+        else {
+            Py_DECREF(item);
+            PyErr_SetString(PyExc_TypeError, "Expected sequence to contain floats or ints.");
+        }
+        Py_DECREF(item);
+    }
+    return double_seq;
+}
+
+
 int prod(int n, int *seq) {
+    if (n == 0) return 0;
     int result = 1;
     for (int i = 0; i < n; i++)
         result *= seq[i];
@@ -59,36 +83,46 @@ int prod(int n, int *seq) {
 static PyObject *Tensor_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
     PyTensorObject *self;
 
-    PyObject *shape_seq;
-    if (!PyArg_ParseTuple(args, "O", &shape_seq))
+    PyObject *shape_seq = NULL;
+    PyObject *data_seq = NULL;
+    if (!PyArg_ParseTuple(args, "O|O", &shape_seq, &data_seq))
         return NULL;
+
     if (!PySequence_Check(shape_seq)) {
         PyErr_SetString(PyExc_TypeError, "Expected `shape` to be a sequence.");
         return NULL;
     }
+    int ndims = PySequence_Size(shape_seq);
+    int *shape = extract_ints(ndims, shape_seq);
+    if (shape == NULL)
+        return NULL;
+    int size = prod(ndims, shape);
+
+    double *data;
+    if (data_seq != NULL) {
+        if (!PySequence_Check(data_seq)) {
+            PyErr_SetString(PyExc_TypeError, "Expected `data` to be a sequence.");
+            return NULL;
+        }
+        if (PySequence_Length(data_seq) != size) {
+            PyErr_SetString(PyExc_ValueError, "`shape` and `data` are incompatible.");
+            return NULL;
+        }
+        data = extract_doubles(size, data_seq);
+        if (data == NULL)
+            return NULL;
+    } else {
+        data = (double *) malloc(size * sizeof(double));
+        for (int i = 0; i < size; i++)
+            data[i] = i;
+    }
 
     self = (PyTensorObject *) type->tp_alloc(type, 0);
     if (self != NULL) {
-        self->ndims = PySequence_Size(shape_seq);
-
-        self->shape = (int *) malloc(self->ndims * sizeof(int));
-        if (self->shape == NULL) {
-            PyErr_NoMemory();
-            return NULL;
-        }
-
-        self->shape = extract_ints(self->ndims, shape_seq);
-        if (self->shape == NULL)
-            return NULL;
-        self->size = prod(self->ndims, self->shape);
-
-        self->data = (double *) malloc(self->size * sizeof(double));
-        if (self->data == NULL) {
-            PyErr_NoMemory();
-            return NULL;
-        }
-        for (int i = 0; i < self->size; i++)
-            self->data[i] = i;
+        self->ndims = ndims;
+        self->shape = shape;
+        self->size = size;
+        self->data = data;
 
         self->strides = generate_strides(self->ndims, self->shape);
         if (self->strides == NULL)
