@@ -111,7 +111,7 @@ static PyNumberMethods Vector_number_methods = {
 // Python type definition
 static PyTypeObject VectorType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "lib_vector.Vector",
+    .tp_name = "mytensor.Vector",
     .tp_doc = "My vector type",
     .tp_basicsize = sizeof(PyVectorObject),
     .tp_itemsize = 0,
@@ -127,13 +127,13 @@ static PyTypeObject VectorType = {
 // Python module definition and initialization
 static PyModuleDef lib_vector_module = {
     PyModuleDef_HEAD_INIT,
-    .m_name = "lib_vector",
+    .m_name = "mytensor.lib.vector",
     .m_doc = "My vector module",
     .m_size = -1,
 };
 
 
-PyMODINIT_FUNC PyInit_lib_vector(void) {
+PyMODINIT_FUNC PyInit_vector(void) {
     PyObject *m;
     if (PyType_Ready(&VectorType) < 0)
         return NULL;

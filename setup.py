@@ -6,9 +6,10 @@ def main():
 		name="fputs",
 		version="1.0.0",
 		description="Python interface for the fputs C library function",
+		packages=["mytensor", "mytensor.lib"],
 		ext_modules=[
-			Extension("lib_vector", ["mytensor/vectormodule.c"]),
-			Extension("lib_tensor", ["mytensor/tensormodule.c"]),
+			Extension("mytensor.lib.vector", ["mytensor/lib/src/vectormodule.c"]),
+			Extension("mytensor.lib.tensor", ["mytensor/lib/src/tensormodule.c"]),
 		],
 	)
 

@@ -180,13 +180,13 @@ static PyTypeObject TensorType = {
 
 static PyModuleDef lib_tensor_module = {
     PyModuleDef_HEAD_INIT,
-    .m_name = "lib_tensor",
+    .m_name = "mytensor.lib.tensor",
     .m_doc = "My tensor module",
     .m_size = -1,
 };
 
 
-PyMODINIT_FUNC PyInit_lib_tensor(void) {
+PyMODINIT_FUNC PyInit_tensor(void) {
     PyObject *m;
     if (PyType_Ready(&TensorType) < 0)
         return NULL;
