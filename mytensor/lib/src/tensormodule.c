@@ -5,28 +5,6 @@
 #include "tensormodule.h"
 
 
-int extract_shape(int ndims, PyObject *shape_seq, int *shape) {
-    if (ndims == 0) {
-        return 0;
-    }
-    int size = 1;
-    for (int i = 0; i < ndims; i++) {
-        PyObject *item = PySequence_GetItem(shape_seq, i);
-        if (PyLong_Check(item)) {
-            shape[i] = PyLong_AsLong(item);
-            Py_DECREF(item);
-            size *= shape[i];
-        }
-        else {
-            Py_DECREF(item);
-            PyErr_SetString(PyExc_ValueError, "Expected `shape` sequence to consist of integers.");
-            return -1;
-        }
-    }
-    return size;
-}
-
-
 int *generate_strides(int n, int *shape) {
     int *reversed_strides = (int *) malloc(n * sizeof(int));
     if (reversed_strides == NULL) {
@@ -51,6 +29,33 @@ int *generate_strides(int n, int *shape) {
 }
 
 
+int *extract_ints(int n, PyObject *py_int_seq) {
+    int *int_seq = (int *) malloc(n * sizeof(int));
+    if (int_seq == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    for (int i = 0; i < n; i++) {
+        PyObject *item = PySequence_GetItem(py_int_seq, i);
+        if (!PyLong_Check(item)) {
+            Py_DECREF(item);
+            PyErr_SetString(PyExc_TypeError, "Expected sequence to contain integers.");
+        }
+        int_seq[i] = PyLong_AsLong(item);
+        Py_DECREF(item);
+    }
+    return int_seq;
+}
+
+
+int prod(int n, int *seq) {
+    int result = 1;
+    for (int i = 0; i < n; i++)
+        result *= seq[i];
+    return result;
+}
+
+
 static PyObject *Tensor_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
     PyTensorObject *self;
 
@@ -72,9 +77,10 @@ static PyObject *Tensor_new(PyTypeObject *type, PyObject *args, PyObject *kwds) 
             return NULL;
         }
 
-        self->size = extract_shape(self->ndims, shape_seq, self->shape);
-        if (self->size < 0)
+        self->shape = extract_ints(self->ndims, shape_seq);
+        if (self->shape == NULL)
             return NULL;
+        self->size = prod(self->ndims, self->shape);
 
         self->data = (double *) malloc(self->size * sizeof(double));
         if (self->data == NULL) {
