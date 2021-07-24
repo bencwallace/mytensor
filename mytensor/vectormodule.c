@@ -2,7 +2,7 @@
 #include <Python.h>
 #include <structmember.h>
 
-#include "myvector.h"
+#include "vectormodule.h"
 
 
 // memory management
@@ -111,7 +111,7 @@ static PyNumberMethods Vector_number_methods = {
 // Python type definition
 static PyTypeObject VectorType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "mytensor.Vector",
+    .tp_name = "lib_vector.Vector",
     .tp_doc = "My vector type",
     .tp_basicsize = sizeof(PyVectorObject),
     .tp_itemsize = 0,
@@ -127,13 +127,13 @@ static PyTypeObject VectorType = {
 // Python module definition and initialization
 static PyModuleDef mytensormodule = {
     PyModuleDef_HEAD_INIT,
-    .m_name = "mytensor",
+    .m_name = "lib_vector",
     .m_doc = "My tensor module",
     .m_size = -1,
 };
 
 
-PyMODINIT_FUNC PyInit_mytensor(void) {
+PyMODINIT_FUNC PyInit_lib_vector(void) {
     PyObject *m;
     if (PyType_Ready(&VectorType) < 0)
         return NULL;
