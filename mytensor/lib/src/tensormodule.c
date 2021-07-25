@@ -31,6 +31,7 @@ int *generate_strides(int ndims, int *shape) {
 }
 
 
+// todo: use Py_ssize_t for indexing
 int *extract_ints(int n, PyObject *py_int_seq) {
     int *int_seq = (int *) malloc(n * sizeof(int));
     if (int_seq == NULL) {
