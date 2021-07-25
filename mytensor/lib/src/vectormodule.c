@@ -15,12 +15,12 @@ static void Vector_dealloc(PyVectorObject *self) {
 static PyObject *Vector_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
     PyVectorObject *self;
     PyObject *data = NULL;
+    int cuda = 0;
 
     // parse python object
-    if (!PyArg_ParseTuple(args, "O", &data)) {
+    if (!PyArg_ParseTuple(args, "O|i", &data, &cuda)) {
         return NULL;
     }
-
     if (!PySequence_Check(data)) {
         PyErr_SetString(PyExc_TypeError, "Expected a sequence.");
         return NULL;
@@ -28,8 +28,16 @@ static PyObject *Vector_new(PyTypeObject *type, PyObject *args, PyObject *kwds) 
 
     self = (PyVectorObject *) type->tp_alloc(type, 0);
     if (self != NULL) {
+        self->cuda = cuda;
+
         int size = PySequence_Size((PyObject *) data);
-        self->data = (double *) malloc(size * sizeof(double));
+        if (!cuda) {
+            self->data = (double *) malloc(size * sizeof(double));
+        } else {
+            // see https://stackoverflow.com/a/30249353/2449365
+            PyErr_SetString(PyExc_NotImplementedError, "CUDA not implemented");
+            return NULL;
+        }
         if (self->data == NULL) {
             PyErr_NoMemory();
             return NULL;
@@ -85,6 +93,12 @@ static PySequenceMethods Vector_sequence_methods = {
 };
 
 
+void add(int n, double *x, double *y, double *result) {
+    for (int i = 0; i < n; i++)
+        result[i] = x[i] + y[i];
+}
+
+
 // number methods
 static PyObject *Vector_add(PyVectorObject *self, PyVectorObject *other) {
     int size = self->size;
@@ -93,10 +107,17 @@ static PyObject *Vector_add(PyVectorObject *self, PyVectorObject *other) {
         return NULL;
     }
 
+    double sum[size];
+    if (!self->cuda) {
+        add(size, self->data, other->data, sum);
+    } else {
+        // see https://developer.nvidia.com/blog/even-easier-introduction-cuda/
+        PyErr_SetString(PyExc_NotImplementedError, "CUDA implementation not available");
+        return NULL;
+    }
     PyObject *data_list = PyList_New(size);
     for (int i = 0; i < size; ++i) {
-        double sum = self->data[i] + other->data[i];
-        PyList_SetItem(data_list, i, PyFloat_FromDouble(sum));
+        PyList_SetItem(data_list, i, PyFloat_FromDouble(sum[i]));
     }
 
     PyObject *self_type = PyObject_Type((PyObject *) self);
@@ -111,6 +132,18 @@ static PyNumberMethods Vector_number_methods = {
 };
 
 
+static PyMemberDef Vector_members[] = {
+    {
+        .name = "cuda",
+        .type = T_BOOL,
+        .offset = offsetof(PyVectorObject, cuda),
+        .flags = READONLY,
+        .doc = "Whether computations should be performed using CUDA",
+    },
+};
+
+
+
 // Python type definition
 static PyTypeObject VectorType = {
     PyVarObject_HEAD_INIT(NULL, 0)
@@ -121,6 +154,7 @@ static PyTypeObject VectorType = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_new = Vector_new,
     .tp_dealloc = (destructor) Vector_dealloc,
+    .tp_members = Vector_members,
     .tp_methods = Vector_methods,
     .tp_as_sequence = &Vector_sequence_methods,
     .tp_as_number = &Vector_number_methods,

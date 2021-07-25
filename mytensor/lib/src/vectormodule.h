@@ -1,9 +1,11 @@
+#include <stdbool.h>
 #include <Python.h>
 
 
 typedef struct
 {
     PyObject_HEAD
+    bool cuda;
     int size;
     double* data;
 } PyVectorObject;
