@@ -8,4 +8,5 @@ typedef struct
     int *strides;
     int *shape;
     double* data;
+    PyObject *base; // numpy's solution to views and reference counting
 } PyTensorObject;

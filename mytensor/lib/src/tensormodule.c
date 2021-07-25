@@ -5,24 +5,26 @@
 #include "tensormodule.h"
 
 
-int *generate_strides(int n, int *shape) {
-    int *reversed_strides = (int *) malloc(n * sizeof(int));
+int *generate_strides(int ndims, int *shape) {
+    int *reversed_strides = (int *) malloc(ndims * sizeof(int));
     if (reversed_strides == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
     reversed_strides[0] = 1;
-    for (int i = 1; i < n; i++) {
-        reversed_strides[i] = reversed_strides[i - 1] * shape[n - i];
+    for (int i = 1; i < ndims; i++) {
+        int next = reversed_strides[i - 1] * shape[ndims - i];
+        reversed_strides[i] = next;
     }
 
-    int *strides = (int *) malloc(n * sizeof(int));
+    int *strides = (int *) malloc(ndims * sizeof(int));
     if (strides == NULL) {
         PyErr_NoMemory();
         return NULL;
     }
-    for (int i = 0; i < n; i++)
-        strides[i] = reversed_strides[n - i - 1];
+    for (int i = 0; i < ndims; i++) {
+        strides[i] = reversed_strides[ndims - i - 1];
+    }
     free(reversed_strides);
 
     return strides;
@@ -80,9 +82,38 @@ int prod(int n, int *seq) {
 }
 
 
-static PyObject *Tensor_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
-    PyTensorObject *self;
+PyObject *new_tensor(
+    PyTypeObject *type,
+    int ndims,
+    int size,
+    int *strides,
+    int *shape,
+    double *data,
+    PyObject *base
+) {
+    PyTensorObject *self = (PyTensorObject *) type->tp_alloc(type, 0);
+    if (strides == NULL) {
+        strides = generate_strides(ndims, shape);
+        if (strides == NULL)
+            return NULL;
+    } else {
+        self->strides = strides;
+    }
+    if (base != NULL)
+        Py_INCREF(base);
+    if (self != NULL) {
+        self->ndims = ndims;
+        self->shape = shape;
+        self->size = size;
+        self->data = data;
+        self->strides = strides;
+        self->base = base;
+    }
+    return (PyObject *) self;
+}
 
+
+static PyObject *Tensor_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
     PyObject *shape_seq = NULL;
     PyObject *data_seq = NULL;
     if (!PyArg_ParseTuple(args, "O|O", &shape_seq, &data_seq))
@@ -117,25 +148,17 @@ static PyObject *Tensor_new(PyTypeObject *type, PyObject *args, PyObject *kwds) 
             data[i] = i;
     }
 
-    self = (PyTensorObject *) type->tp_alloc(type, 0);
-    if (self != NULL) {
-        self->ndims = ndims;
-        self->shape = shape;
-        self->size = size;
-        self->data = data;
-
-        self->strides = generate_strides(self->ndims, self->shape);
-        if (self->strides == NULL)
-            return NULL;
-    }
-    return (PyObject *) self;
+    return new_tensor(type, ndims, size, NULL, shape, data, NULL);
 }
 
 
 static void Tensor_dealloc(PyTensorObject *self) {
     free(self->strides);
     free(self->shape);
-    free(self->data);
+    if (self->base == NULL)
+        free(self->data);
+    else
+        Py_DECREF(self->base);
     Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
@@ -173,20 +196,18 @@ static PyObject *Tensor_subscript(PyTensorObject *self, PyObject *idx_seq) {
     }
 
     int pos = 0;
-    for (int i = 0; i < self->ndims; i++)
+    for (int i = 0; i < n; i++)
         pos += idx[i] * self->strides[i];
     free(idx);
 
-    int value = self->data[pos];
-    PyObject *shape_list = PyList_New(1);
-    PyList_SetItem(shape_list, 0, PyLong_FromLong(1));
+    int *shape = (int *) malloc(sizeof(int));
+    shape[0] = 1;
 
-    PyObject *data_list = PyList_New(1);
-    PyList_SetItem(data_list, 0, PyLong_FromLong(value));
+    double *data = (double *) malloc(sizeof(double));
+    data[0] = self->data[pos];
 
-    PyObject *args = Py_BuildValue("OO", shape_list, data_list);
-    // todo: defined setitem and check if this is an actual view
-    return PyObject_CallObject(PyObject_Type((PyObject *) self), args);
+    PyTypeObject *type = Py_TYPE(self);
+    return new_tensor(type, 1, 1, NULL, shape, data, (PyObject *) self);
 }
 
 
