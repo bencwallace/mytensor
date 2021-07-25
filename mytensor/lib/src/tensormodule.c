@@ -206,8 +206,7 @@ static PyObject *Tensor_subscript(PyTensorObject *self, PyObject *idx_seq) {
     int *shape = (int *) malloc(sizeof(int));
     shape[0] = 1;
 
-    double *data = (double *) malloc(sizeof(double));
-    data[0] = self->data[pos];
+    double *data = &self->data[pos];
 
     PyTypeObject *type = Py_TYPE(self);
     return new_tensor(type, 1, 1, NULL, shape, data, (PyObject *) self);
