@@ -163,13 +163,19 @@ static void Tensor_dealloc(PyTensorObject *self) {
 }
 
 
-// todo: simplify
+int idx_to_pos(int ndims, int *strides, int *idx) {
+    int pos = 0;
+    for (int i = 0; i < ndims; i++)
+        pos += idx[i] * strides[i];
+    return pos;
+}
+
+
 static PyObject *Tensor_subscript(PyTensorObject *self, PyObject *idx_seq) {
     if (!PySequence_Check(idx_seq)) {
         PyErr_SetString(PyExc_TypeError, "Expected multi-index to be a sequence.");
         return NULL;
     }
-
     int n = PySequence_Size(idx_seq);
     if (n != self->ndims) {
         int ndims_str_len = 1 + self->ndims / 10;   // length of ndims as a string
@@ -180,7 +186,6 @@ static PyObject *Tensor_subscript(PyTensorObject *self, PyObject *idx_seq) {
         PyErr_SetString(PyExc_ValueError, message);
         return NULL;
     }
-
     int *idx = (int *) malloc(n * sizeof(int));
     for (int i = 0; i < n; i++) {
         PyObject *item = PySequence_GetItem(idx_seq, i);
@@ -195,9 +200,7 @@ static PyObject *Tensor_subscript(PyTensorObject *self, PyObject *idx_seq) {
         }
     }
 
-    int pos = 0;
-    for (int i = 0; i < n; i++)
-        pos += idx[i] * self->strides[i];
+    int pos = idx_to_pos(n, self->strides, idx);
     free(idx);
 
     int *shape = (int *) malloc(sizeof(int));
@@ -208,6 +211,49 @@ static PyObject *Tensor_subscript(PyTensorObject *self, PyObject *idx_seq) {
 
     PyTypeObject *type = Py_TYPE(self);
     return new_tensor(type, 1, 1, NULL, shape, data, (PyObject *) self);
+}
+
+
+static int Tensor_ass_subscript(PyTensorObject *self, PyObject *idx_seq, PyObject *py_val) {
+    if (!PySequence_Check(idx_seq)) {
+        PyErr_SetString(PyExc_TypeError, "Expected multi-index to be a sequence.");
+        return -1;
+    }
+    int n = PySequence_Size(idx_seq);
+    if (n != self->ndims) {
+        int ndims_str_len = 1 + self->ndims / 10;   // length of ndims as a string
+        char *format = "Expected multi-index to have length %d";
+        char *message = (char *) malloc((strlen(format) - 2 + ndims_str_len));
+        sprintf(message, format, self->ndims);
+        free(message);
+        PyErr_SetString(PyExc_ValueError, message);
+        return -1;
+    }
+    int *idx = (int *) malloc(n * sizeof(int));
+    for (int i = 0; i < n; i++) {
+        PyObject *item = PySequence_GetItem(idx_seq, i);
+        if (PyLong_Check(item)) {
+            idx[i] = PyLong_AsLong(item);
+            Py_DECREF(item);
+        }
+        else {
+            Py_DECREF(item);
+            PyErr_SetString(PyExc_ValueError, "Expected `shape` sequence to consist of integers.");
+            return -1;
+        }
+    }
+    // todo: deduplicate above code
+
+    int pos = idx_to_pos(n, self->strides, idx);
+    free(idx);
+
+    if (!PyFloat_Check(py_val)) {
+        PyErr_SetString(PyExc_ValueError, "Expected assigned value to be float.");
+        return -1;
+    }
+    double value = PyFloat_AsDouble(py_val);
+    self->data[pos] = value;
+    return 0;
 }
 
 
@@ -246,6 +292,7 @@ static PyMemberDef Tensor_members[] = {
 
 static PyMappingMethods Tensor_mapping_methods = {
     .mp_subscript = (binaryfunc) Tensor_subscript,
+    .mp_ass_subscript = (objobjargproc) Tensor_ass_subscript,
 };
 
 
