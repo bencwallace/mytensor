@@ -1,12 +1,15 @@
+#ifndef TENSORMODULE_H
+#define TENSORMODULE_H
+
 #include <Python.h>
+
+#include "tensor.h"
 
 typedef struct
 {
     PyObject_HEAD
-    int size;
-    int ndims;
-    int *strides;
-    int *shape;
-    double* data;
-    PyObject *base; // numpy's solution to views and reference counting
+    Tensor *tensor;
+    PyObject *base;
 } PyTensorObject;
+
+#endif
