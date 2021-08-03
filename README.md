@@ -1,8 +1,8 @@
 # To do
 
-## Fix bugs
+## Features
 
-* Random behaviour of `str(Tensor([1, 1]))`
+* Support scalars and dimensions of size $0$.
 
 ## Try to write more idiomatic code
 
