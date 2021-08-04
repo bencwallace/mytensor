@@ -173,15 +173,6 @@ static int Tensor_ass_subscript(PyTensorObject *self, PyObject *idx_seq, PyObjec
 }
 
 
-// static PyObject *Tensor_get_strides(PyTensorObject *self, PyObject *args) {
-//     // todo: is reference counting needed?
-//     PyObject *strides_list = PyList_New(self->ndims);
-//     for (int i = 0; i < self->ndims; i++)
-//         PyList_SetItem(strides_list, i, PyLong_FromLong(self->strides[i]));
-//     return (PyObject *) strides_list;
-// }
-
-
 static PyObject *Tensor_get_size(PyTensorObject *self, PyObject *args) {
     return PyLong_FromLong(self->tensor->size);
 }

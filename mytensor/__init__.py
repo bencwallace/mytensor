@@ -1,4 +1,4 @@
-from .lib import Tensor
+from .tensor import Tensor
 
 
-__all__ = ["Vector", "Tensor"]
+__all__ = ["Tensor"]
