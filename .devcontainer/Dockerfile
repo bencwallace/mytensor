@@ -1,4 +1,5 @@
-FROM nvidia/cuda:11.0.3-devel-ubuntu18.04
+# FROM nvidia/cuda:11.0.3-devel-ubuntu18.04
+FROM ubuntu:18.04
 
 # set up conda
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8

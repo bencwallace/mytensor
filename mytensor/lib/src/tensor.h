@@ -8,17 +8,18 @@ private:
     double* data;
 
     void generate_strides();
-    int idx_to_pos(int *idx);
+    int idx_to_pos(int *idx) const;
 
 public:
     int ndims;
     const int size;
 
+    Tensor(const Tensor&);
     Tensor(int size, int ndims, int *strides, int *shape, double *data);
     ~Tensor();
     
-    Tensor &operator=(double val);
     double *operator[](int*);
+    Tensor operator+(const Tensor&);
 
     double *flatten();
 };

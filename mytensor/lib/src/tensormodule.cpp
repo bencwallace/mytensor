@@ -55,6 +55,16 @@ int prod(int n, int *seq) {
 }
 
 
+PyObject *new_tensor(PyTypeObject *type, Tensor *tensor, PyObject *base) {
+    PyTensorObject *self = (PyTensorObject *) type->tp_alloc(type, 0);
+    if (base != NULL)
+        Py_INCREF(base);
+    self->base = base;
+    self->tensor = tensor;
+    return (PyObject *) self;
+}
+
+
 PyObject *new_tensor(
     PyTypeObject *type,
     int ndims,
@@ -64,12 +74,8 @@ PyObject *new_tensor(
     double *data,
     PyObject *base
 ) {
-    PyTensorObject *self = (PyTensorObject *) type->tp_alloc(type, 0);
-    if (base != NULL)
-        Py_INCREF(base);
-    self->tensor = new Tensor(size, ndims, strides, shape, data);
-    self->base = base;
-    return (PyObject *) self;
+    Tensor *tensor = new Tensor(size, ndims, strides, shape, data);
+    return new_tensor(type, tensor, base);
 }
 
 
@@ -187,10 +193,16 @@ static PyObject *Tensor_flatten(PyTensorObject *self, PyObject *args) {
 }
 
 
+static PyObject *Tensor_copy(PyTensorObject *self, PyObject *args) {
+    Tensor copy = *self->tensor;
+    return (PyObject *) new_tensor(Py_TYPE(self), &copy, NULL);
+}
+
+
 static PyMethodDef Tensor_methods[] = {
     {"size", (PyCFunction) Tensor_get_size, METH_VARARGS, "Get the tensor size."},
     {"flatten", (PyCFunction) Tensor_flatten, METH_VARARGS, "Flatten into a list."},
-    // {"get_strides", (PyCFunction) Tensor_get_strides, METH_VARARGS, "Get the tensor strides"},
+    {"copy", (PyCFunction) Tensor_copy, METH_VARARGS, "Make a copy of the tensor."},
     {NULL, NULL, NULL, NULL},
 };
 
@@ -199,6 +211,18 @@ static PyMappingMethods Tensor_mapping_methods = {
     NULL,   // length
     (binaryfunc) Tensor_subscript,  // subscript
     .mp_ass_subscript = (objobjargproc) Tensor_ass_subscript,
+};
+
+
+static PyObject *Tensor_add(PyTensorObject *self, PyTensorObject *other) {
+    PyTypeObject *type = Py_TYPE(self);
+    Tensor sum = *self->tensor + *other->tensor;
+    return new_tensor(type, &sum, NULL);
+}
+
+
+static PyNumberMethods Tensor_number_methods = {
+    (binaryfunc) Tensor_add,
 };
 
 
@@ -229,6 +253,7 @@ PyMODINIT_FUNC PyInit_tensor(void) {
     // TensorType.tp_str = (reprfunc) Tensor_str;
     TensorType.tp_as_mapping = &Tensor_mapping_methods;
     TensorType.tp_methods = Tensor_methods;
+    TensorType.tp_as_number = &Tensor_number_methods;
     if (PyType_Ready(&TensorType) < 0)
         return NULL;
     
@@ -245,4 +270,3 @@ PyMODINIT_FUNC PyInit_tensor(void) {
 
     return m;
 }
-
