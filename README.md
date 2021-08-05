@@ -2,7 +2,7 @@
 
 ## Features
 
-* Support scalars and dimensions of size $0$.
+* Views
 
 ## Try to write more idiomatic code
 

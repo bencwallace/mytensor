@@ -2,6 +2,11 @@
 
 using ::Tensor;
 
+
 int main() {
-    Tensor *t = new Tensor(3, 1, nullptr, new int[1]{3}, new double[3]{1, 2, 3});
+    Tensor t1;       // test default constructor
+    Tensor *t2 = new Tensor(1, nullptr, nullptr, nullptr);   // test base constructor
+    delete t2;      // test destructor
+
+    return 0;
 }

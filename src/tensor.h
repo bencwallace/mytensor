@@ -6,21 +6,24 @@ private:
     int *strides;
     int *shape;
     double* data;
+    int ndims;
+    int size;
 
     void generate_strides();
     int idx_to_pos(int *idx) const;
 
 public:
-    int ndims;
-    const int size;
-
+    // constructors and destructor
+    Tensor(int ndims, int *strides, int *shape, double *data);
+    Tensor();
     Tensor(const Tensor&);
-    Tensor(int size, int ndims, int *strides, int *shape, double *data);
     ~Tensor();
-    
+
+    // operators
     double *operator[](int*);
     Tensor operator+(const Tensor&);
 
+    // other methods
     double *flatten();
 };
 

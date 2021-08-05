@@ -6,6 +6,46 @@
 using namespace std;
 
 
+template<typename T>
+T prod(int n, T* values) {
+    int result = 1;
+    for (int i = 0; i < n; i++)
+        result *= values[i];
+    return result;
+}
+
+
+// base constructor
+Tensor::Tensor(int ndims, int *strides, int *shape, double *data):
+strides(strides), shape(shape), data(data), ndims(ndims) {
+    // default shape is all zeros
+    if (shape == nullptr) {
+        shape = new int[ndims];
+        for (int i = 0; i < ndims; i++)
+            shape[i] = 0;
+    }
+
+    // product of shape entries should equal size (except in degenerate case)
+    if (ndims == 0)
+        size = 0;
+    else
+        size = prod(ndims, shape);
+
+    // generate default strides for given shape
+    if (strides == nullptr)
+        generate_strides();
+
+    // default data is all zeros
+    if (data == nullptr)
+        for (int i = 0; i < size; i++)
+            data[i] = 0;
+};
+
+// default constructor constructs 0 scalar
+Tensor::Tensor(): Tensor(0, nullptr, nullptr, nullptr) {}
+
+
+// copy constructor
 Tensor::Tensor(const Tensor &other):
 size(other.size), ndims(other.ndims) {
     strides = new int[ndims];
@@ -18,19 +58,20 @@ size(other.size), ndims(other.ndims) {
     memcpy(data, other.data, size * sizeof(double));
 }
 
-Tensor::Tensor(int size, int ndims, int *strides, int *shape, double *data):
-strides(strides), shape(shape), data(data), ndims(ndims), size(size) {
-    if (strides == nullptr)
-        generate_strides();
-};
-
 Tensor::~Tensor() {
     delete strides;
     delete shape;
     delete data;
 }
 
+
 void Tensor::generate_strides() {
+    // scalar case
+    if (ndims < 1)
+        strides = new int[1]{0};
+        return;
+
+    // vector case
     strides = new int[ndims];
     // generate strides in reverse order
     strides[0] = 1;
