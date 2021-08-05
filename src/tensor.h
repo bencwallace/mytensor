@@ -45,8 +45,17 @@ private:
 
 
 public:
+    // static constructors
+    template <typename S>
+    static Tensor *constant(S value, int ndims, int *shape) {
+        int size = prod(ndims, shape);
+        T *data = new S[size];
+        for (int i = 0; i < ndims; i++)
+            data[i] = value;
+        return new Tensor(ndims, nullptr, shape, data);
+    }
+
     // constructors and destructor
-   
     // base constructor
     Tensor(int ndims, int *strides, int *shape, T *data):
     strides(strides), shape(shape), data(data), ndims(ndims) {
