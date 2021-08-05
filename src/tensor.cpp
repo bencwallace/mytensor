@@ -16,7 +16,8 @@ T prod(int n, T* values) {
 
 
 // base constructor
-Tensor::Tensor(int ndims, int *strides, int *shape, double *data):
+template <typename T>
+Tensor<T>::Tensor(int ndims, int *strides, int *shape, T *data):
 strides(strides), shape(shape), data(data), ndims(ndims) {
     // default shape is all zeros
     if (shape == nullptr) {
@@ -35,18 +36,20 @@ strides(strides), shape(shape), data(data), ndims(ndims) {
     if (strides == nullptr)
         generate_strides();
 
-    // default data is all zeros
-    if (data == nullptr)
-        for (int i = 0; i < size; i++)
-            data[i] = 0;
+    // // default data is all zeros
+    // if (data == nullptr)
+    //     for (int i = 0; i < size; i++)
+    //         data[i] = 0;
 };
 
 // default constructor constructs 0 scalar
-Tensor::Tensor(): Tensor(0, nullptr, nullptr, nullptr) {}
+template <typename T>
+Tensor<T>::Tensor(): Tensor(0, nullptr, nullptr, nullptr) {}
 
 
 // copy constructor
-Tensor::Tensor(const Tensor &other):
+template <typename T>
+Tensor<T>::Tensor(const Tensor<T> &other):
 size(other.size), ndims(other.ndims) {
     strides = new int[ndims];
     memcpy(strides, other.strides, ndims * sizeof(int));
@@ -55,17 +58,19 @@ size(other.size), ndims(other.ndims) {
     memcpy(shape, other.shape, ndims * sizeof(int));
 
     data = new double[size];
-    memcpy(data, other.data, size * sizeof(double));
+    memcpy(data, other.data, size * sizeof(T));
 }
 
-Tensor::~Tensor() {
+template <typename T>
+Tensor<T>::~Tensor() {
     delete strides;
     delete shape;
     delete data;
 }
 
 
-void Tensor::generate_strides() {
+template <typename T>
+void Tensor<T>::generate_strides() {
     // scalar case
     if (ndims < 1)
         strides = new int[1]{0};
@@ -87,24 +92,22 @@ void Tensor::generate_strides() {
     }
 }
 
-int Tensor::idx_to_pos(int *idx) const {
+template <typename T>
+int Tensor<T>::idx_to_pos(int *idx) const {
     int pos = 0;
     for (int i = 0; i < ndims; i++)
         pos += idx[i] * strides[i];
     return pos;
 }
 
-double *Tensor::operator[](int *idx) {
-    return data + idx_to_pos(idx);
-}
+// Tensor Tensor::operator+(const Tensor &other) {
+//     Tensor result = other;
+//     for (int i = 0; i < result.size; i++)
+//         result.data[i] += data[i];
+//     return result;
+// }
 
-Tensor Tensor::operator+(const Tensor &other) {
-    Tensor result = other;
-    for (int i = 0; i < result.size; i++)
-        result.data[i] += data[i];
-    return result;
-}
-
-double *Tensor::flatten() {
+template <typename T>
+T *Tensor<T>::flatten() {
     return data;
 }

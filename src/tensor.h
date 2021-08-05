@@ -1,11 +1,12 @@
 #ifndef TENSOR_H
 #define TENSOR_H
 
+template <typename T>
 class Tensor {
 private:
     int *strides;
     int *shape;
-    double* data;
+    T* data;
     int ndims;
     int size;
 
@@ -14,17 +15,16 @@ private:
 
 public:
     // constructors and destructor
-    Tensor(int ndims, int *strides, int *shape, double *data);
+    Tensor(int ndims, int *strides, int *shape, T *data);
     Tensor();
     Tensor(const Tensor&);
     ~Tensor();
 
     // operators
-    double *operator[](int*);
-    Tensor operator+(const Tensor&);
+    // Tensor operator+(const Tensor&);
 
     // other methods
-    double *flatten();
+    T *flatten();
 };
 
 #endif
