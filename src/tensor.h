@@ -5,7 +5,9 @@
 
 #include "utils.h"
 
-template <typename T>
+enum Dev {CPU, GPU};
+
+template <typename T, Dev D>
 class Tensor {
 private:
     int *strides;
@@ -86,7 +88,7 @@ public:
     Tensor(): Tensor(0, nullptr, nullptr, nullptr) {}
 
     // copy constructor
-    Tensor(const Tensor<T> &other):
+    Tensor(const Tensor<T, D> &other):
     size(other.size), ndims(other.ndims) {
         strides = new int[ndims];
         memcpy(strides, other.strides, ndims * sizeof(int));
@@ -94,7 +96,7 @@ public:
         shape = new int[ndims];
         memcpy(shape, other.shape, ndims * sizeof(int));
 
-        data = new double[size];
+        data = new T[size];
         memcpy(data, other.data, size * sizeof(T));
     }
 
@@ -105,7 +107,12 @@ public:
     }
 
     // operators
-    // Tensor operator+(const Tensor&);
+    Tensor operator+(const Tensor &other) {
+        Tensor result = other;
+        for (int i = 0; i < result.size; i++)
+            result.data[i] += data[i];
+        return result;
+    }
 
     // other methods
     T *flatten() {

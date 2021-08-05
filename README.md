@@ -1,5 +1,9 @@
 # To do
 
+## Bugs
+
+* Default arrays not being initialized properly in base constructor
+
 ## Features
 
 * Views
