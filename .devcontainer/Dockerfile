@@ -22,6 +22,7 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-4.7.12-Linux-x86
 RUN conda install ipython
 
 RUN pip install pytest
+RUN apt-get install -y gdb
 
 # [Optional] Uncomment this section to install additional OS packages.
 # RUN apt-get update && export DEBIAN_FRONTEND=noninteractive &&\
