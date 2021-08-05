@@ -1,15 +1,18 @@
-build:
-	python setup.py build
+CC=g++
 
-clean-pyext:
-	rm -rf build
+INCDIR=src
+OUTDIR=build
+SRCDIR=src
 
-clean-pycache:
-	rm -rf mytensor_pkg/__pycache__
+CCFLAGS=-I$(INCDIR)
+DEPS=$(INCDIR)/*.h
 
-clean: clean-pyext clean-pycache
+$(OUTDIR)/%.o: $(SRCDIR)/%.cpp $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
 
-install:
-	python setup.py install
+build: $(OUTDIR)/tensor.o
 
-.PHONY: build clean install
+.PHONY: clean
+
+clean:
+	rm -rf $(OUTDIR)/*.o
