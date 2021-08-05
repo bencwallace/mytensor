@@ -1,3 +1,5 @@
+Note: The `python` branch includes Python bindings.
+
 # To do
 
 ## Features
