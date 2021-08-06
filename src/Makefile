@@ -3,9 +3,9 @@ CC=g++
 SRCDIR=src
 
 CCFLAGS=-I.
-DEPS=*.h
+DEPS = *.h *.tpp
 
-OBJS = tensor.o test.o utils.o
+OBJS = tensor_utils.o tensor.o test.o
 
 all: $(OBJS)
 	$(CC) $(CCFLAGS) -o test $(OBJS)
