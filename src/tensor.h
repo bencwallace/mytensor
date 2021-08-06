@@ -5,9 +5,7 @@
 
 #include "utils.h"
 
-enum Dev {CPU, GPU};
-
-template <typename T, Dev D>
+template <typename T>
 class Tensor {
 private:
     int *strides;
@@ -89,7 +87,7 @@ public:
     Tensor(): Tensor(0, nullptr, nullptr, nullptr) {}
 
     // copy constructor
-    Tensor(const Tensor<T, D> &other):
+    Tensor(const Tensor<T> &other):
     size(other.size), ndims(other.ndims) {
         if (ndims > 0) {
             strides = new int[ndims];
