@@ -13,7 +13,7 @@ int main() {
         42, 3, new int[3]{1, 2, 3}
     );  // test static constructor
     auto t4 = *t3;   // test copy constructor
-    auto t4 = *t4 + t4;
+    auto t5 = t4 + t4;  // test add
 
     return 0;
 }

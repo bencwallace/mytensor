@@ -18,9 +18,10 @@ private:
 
     void generate_strides() {
         // scalar case
-        if (ndims < 1)
+        if (ndims < 1) {
             strides = new int[1]{0};
             return;
+        }
 
         // vector case
         strides = new int[ndims];
@@ -52,7 +53,7 @@ public:
     static Tensor *constant(S value, int ndims, int *shape) {
         int size = prod(ndims, shape);
         T *data = new S[size];
-        for (int i = 0; i < ndims; i++)
+        for (int i = 0; i < size; i++)
             data[i] = value;
         return new Tensor(ndims, nullptr, shape, data);
     }
@@ -62,20 +63,20 @@ public:
     Tensor(int ndims, int *strides, int *shape, T *data):
     strides(strides), shape(shape), data(data), ndims(ndims) {
         // default shape is all zeros
-        if (shape == nullptr) {
-            shape = new int[ndims];
+        if (this->shape == nullptr) {
+            this->shape = new int[ndims];
             for (int i = 0; i < ndims; i++)
-                shape[i] = 0;
+                this->shape[i] = 0;
         }
 
         // product of shape entries should equal size (except in degenerate case)
         if (ndims == 0)
             size = 0;
         else
-            size = prod(ndims, shape);
+            size = prod(ndims, this->shape);
 
         // generate default strides for given shape
-        if (strides == nullptr)
+        if (this->strides == nullptr)
             generate_strides();
 
         // // default data is all zeros
@@ -90,14 +91,18 @@ public:
     // copy constructor
     Tensor(const Tensor<T, D> &other):
     size(other.size), ndims(other.ndims) {
-        strides = new int[ndims];
-        memcpy(strides, other.strides, ndims * sizeof(int));
+        if (ndims > 0) {
+            strides = new int[ndims];
+            memcpy(strides, other.strides, ndims * sizeof(int));
 
-        shape = new int[ndims];
-        memcpy(shape, other.shape, ndims * sizeof(int));
+            shape = new int[ndims];
+            memcpy(shape, other.shape, ndims * sizeof(int));
+        }
 
-        data = new T[size];
-        memcpy(data, other.data, size * sizeof(T));
+        if (size > 0) {
+            data = new T[size];
+            memcpy(data, other.data, size * sizeof(T));
+        }
     }
 
     ~Tensor() {
