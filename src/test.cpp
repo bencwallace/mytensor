@@ -1,4 +1,4 @@
-#include "src/tensor.h"
+#include "tensor.h"
 
 using ::Tensor;
 
